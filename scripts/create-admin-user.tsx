@@ -1,12 +1,13 @@
 // scripts/create-admin-user.tsx
 
 import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, applicationDefault, cert } from 'firebase-admin/app';
 import readline from 'readline';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 
-initializeApp({
-  credential: applicationDefault(),
-});
+dotenv.config();
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -17,6 +18,22 @@ function ask(question: string): Promise<string> {
   return new Promise((resolve) => {
     rl.question(question, resolve);
   });
+}
+
+function initializeFirebase() {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const serviceAccountPath = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT);
+    if (!fs.existsSync(serviceAccountPath)) {
+      console.error('Service account file not found at:', serviceAccountPath);
+      process.exit(1);
+    }
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    initializeApp({ credential: cert(serviceAccount) });
+    console.log('✅ Firebase initialized with service account');
+  } else {
+    initializeApp({ credential: applicationDefault() });
+    console.log('✅ Firebase initialized with application default credentials');
+  }
 }
 
 async function createUserWithRole() {
@@ -49,6 +66,8 @@ async function createUserWithRole() {
   await auth.setCustomUserClaims(userRecord.uid, claims);
   console.log(`User ${email} is now assigned role: ${role}`);
 }
+
+initializeFirebase();
 
 createUserWithRole().catch((e) => {
   console.error('Error creating user:', e);
