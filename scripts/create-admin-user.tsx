@@ -1,51 +1,58 @@
-// This is a script you would run once to create your admin user
-// You would run this locally or in a secure environment
+// scripts/create-admin-user.tsx
 
-import { initializeApp } from "firebase/app"
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
-import { getFirestore, doc, setDoc } from "firebase/firestore"
+import { getAuth } from 'firebase-admin/auth';
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import readline from 'readline';
 
-// Your Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyB3dI7vF0QXf7nQqH2_vGylR5LuDwl8xZQ",
-  authDomain: "m8bs-c4f3d.firebaseapp.com",
-  projectId: "m8bs-c4f3d",
-  storageBucket: "m8bs-c4f3d.firebasestorage.app",
-  messagingSenderId: "976462758272",
-  appId: "1:976462758272:web:8801f8edb038a12e31c165",
+initializeApp({
+  credential: applicationDefault(),
+});
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function ask(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(question, resolve);
+  });
 }
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig)
-const auth = getAuth(app)
-const db = getFirestore(app)
+async function createUserWithRole() {
+  const email = await ask('Enter user email: ');
+  const password = await ask('Enter temporary password: ');
+  const role = await ask('Enter role (admin/user): ');
+  rl.close();
 
-// Admin user details - CHANGE THESE!
-const ADMIN_EMAIL = "support@theterriogroup.com"
-const ADMIN_PASSWORD = "Admin@123456"
-const ADMIN_NAME = "System Administrator"
+  const auth = getAuth();
 
-async function createAdminUser() {
   try {
-    // Create the user
-    const userCredential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD)
-
-    const user = userCredential.user
-
-    // Add admin role to user in Firestore
-    await setDoc(doc(db, "users", user.uid), {
-      email: ADMIN_EMAIL,
-      displayName: ADMIN_NAME,
-      role: "admin",
-      createdAt: new Date(),
-    })
-
-    console.log("Admin user created successfully:", user.uid)
-  } catch (error) {
-    console.error("Error creating admin user:", error)
+    const user = await auth.getUserByEmail(email);
+    console.log(`User already exists: ${user.uid}`);
+  } catch (err: any) {
+    if (err.code === 'auth/user-not-found') {
+      const newUser = await auth.createUser({
+        email,
+        emailVerified: true,
+        password,
+        displayName: role === 'admin' ? 'Real Admin' : 'User',
+      });
+      console.log(`Created new user: ${newUser.uid}`);
+    } else {
+      throw err;
+    }
   }
+
+  const userRecord = await auth.getUserByEmail(email);
+  const claims = role === 'admin' ? { admin: true } : { user: true };
+  await auth.setCustomUserClaims(userRecord.uid, claims);
+  console.log(`User ${email} is now assigned role: ${role}`);
 }
 
-// Run the function
-createAdminUser()
+createUserWithRole().catch((e) => {
+  console.error('Error creating user:', e);
+  process.exit(1);
+});
+
 
