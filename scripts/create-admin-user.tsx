@@ -21,7 +21,7 @@ const auth = getAuth(app)
 const db = getFirestore(app)
 
 // Admin user details - CHANGE THESE!
-const ADMIN_EMAIL = "admin@m8bs.com"
+const ADMIN_EMAIL = "support@theterriogroup.com"
 const ADMIN_PASSWORD = "Admin@123456"
 const ADMIN_NAME = "System Administrator"
 
