@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Mail, Key, LogIn, AlertCircle } from "lucide-react"
@@ -14,20 +13,18 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Check if already logged in
   useEffect(() => {
-    const userStr = localStorage.getItem("user")
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        if (user && user.role === "admin") {
+    const unsub = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const token = await user.getIdTokenResult()
+        if (token.claims.admin === true) {
           router.push("/admin/dashboard")
+        } else {
+          auth.signOut()
         }
-      } catch (error) {
-        console.error("Error parsing user data:", error)
-        localStorage.removeItem("user")
       }
-    }
+    })
+    return () => unsub()
   }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -36,49 +33,19 @@ export default function AdminLogin() {
     setLoading(true)
 
     try {
-      // For demo purposes, allow a test admin login
-      if (credentials.email === "admin@example.com" && credentials.password === "admin123") {
-        // Create a mock admin user
-        const adminUser = {
-          uid: "admin-123",
-          email: "admin@example.com",
-          displayName: "Admin User",
-          role: "admin",
-        }
-
-        // Store in localStorage
-        localStorage.setItem("user", JSON.stringify(adminUser))
-
-        // Redirect to admin dashboard
-        router.push("/admin/dashboard")
-        return
-      }
-
-      // Try Firebase authentication
       const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password)
       const user = userCredential.user
 
-      // In a real app, you would check if the user has admin role in Firestore
-      // For now, we'll use a simple check based on email
-      const isAdmin = user.email === "admin@example.com"
+      const token = await user.getIdTokenResult()
+      const isAdmin = token.claims.admin === true
 
       if (!isAdmin) {
         setError("You don't have admin privileges")
+        await auth.signOut()
         setLoading(false)
         return
       }
 
-      // Store user info in localStorage with admin role
-      const adminUser = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email?.split("@")[0],
-        role: "admin",
-      }
-
-      localStorage.setItem("user", JSON.stringify(adminUser))
-
-      // Redirect to admin dashboard
       router.push("/admin/dashboard")
     } catch (err) {
       console.error("Login error:", err)
@@ -132,7 +99,6 @@ export default function AdminLogin() {
               />
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#5e6e82]" />
             </div>
-            <p className="text-xs text-[#5e6e82] mt-1">For demo: admin@example.com / admin123</p>
           </div>
 
           <button
