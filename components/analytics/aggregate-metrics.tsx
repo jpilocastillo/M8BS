@@ -106,4 +106,3 @@ export default function AggregateMetrics({ events }: AggregateMetricsProps) {
     </div>
   )
 }
-

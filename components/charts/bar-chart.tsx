@@ -28,4 +28,3 @@ export default function BarChart({ data, dataKey, color = "#2c7be5", height = 50
     </ResponsiveContainer>
   )
 }
-

@@ -1,37 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { initializeFirebaseAdmin } from "@/lib/firebase-admin-server"
-
-// Helper function to verify admin status (same as in users/route.ts)
-async function verifyIsAdmin(authHeader: string | null) {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new Error("Unauthorized: Missing or invalid authorization header")
-  }
-
-  const token = authHeader.split("Bearer ")[1]
-
-  try {
-    const { auth } = initializeFirebaseAdmin()
-    const decodedToken = await auth.verifyIdToken(token)
-
-    // Check if user is admin (you can customize this logic)
-    const email = decodedToken.email
-    if (!email || !email.includes("admin")) {
-      throw new Error("Forbidden: User is not an admin")
-    }
-
-    return decodedToken
-  } catch (error) {
-    console.error("Error verifying admin status:", error)
-    throw new Error("Unauthorized: Invalid token")
-  }
-}
+import { verifyAuth, createErrorResponse } from "@/lib/api-auth"
 
 // GET handler to get a specific user
 export async function GET(request: NextRequest, { params }: { params: { uid: string } }) {
-  try {
-    // Verify admin status
-    await verifyIsAdmin(request.headers.get("authorization"))
+  // Verify admin status
+  const authResult = await verifyAuth(request, true)
 
+  if (!authResult.success) {
+    return createErrorResponse(authResult.error, authResult.status)
+  }
+
+  try {
     const { auth, db } = initializeFirebaseAdmin()
     const uid = params.uid
 
@@ -66,18 +46,25 @@ export async function GET(request: NextRequest, { params }: { params: { uid: str
   } catch (error) {
     console.error(`Error in GET /api/users/${params.uid}:`, error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: error instanceof Error && error.message.includes("Unauthorized") ? 401 : 500 },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }
 
 // DELETE handler to delete a user
 export async function DELETE(request: NextRequest, { params }: { params: { uid: string } }) {
-  try {
-    // Verify admin status
-    await verifyIsAdmin(request.headers.get("authorization"))
+  // Verify admin status
+  const authResult = await verifyAuth(request, true)
 
+  if (!authResult.success) {
+    return createErrorResponse(authResult.error, authResult.status)
+  }
+
+  try {
     const { auth, db } = initializeFirebaseAdmin()
     const uid = params.uid
 
@@ -106,18 +93,25 @@ export async function DELETE(request: NextRequest, { params }: { params: { uid: 
   } catch (error) {
     console.error(`Error in DELETE /api/users/${params.uid}:`, error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: error instanceof Error && error.message.includes("Unauthorized") ? 401 : 500 },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }
 
 // PATCH handler to update a user
 export async function PATCH(request: NextRequest, { params }: { params: { uid: string } }) {
-  try {
-    // Verify admin status
-    await verifyIsAdmin(request.headers.get("authorization"))
+  // Verify admin status
+  const authResult = await verifyAuth(request, true)
 
+  if (!authResult.success) {
+    return createErrorResponse(authResult.error, authResult.status)
+  }
+
+  try {
     const { auth, db } = initializeFirebaseAdmin()
     const uid = params.uid
     const body = await request.json()
@@ -166,9 +160,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { uid: s
   } catch (error) {
     console.error(`Error in PATCH /api/users/${params.uid}:`, error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: error instanceof Error && error.message.includes("Unauthorized") ? 401 : 500 },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }
-

@@ -1517,4 +1517,3 @@ export function DashboardWithProvider() {
 
 // Export the wrapped component as default
 export default DashboardWithProvider
-

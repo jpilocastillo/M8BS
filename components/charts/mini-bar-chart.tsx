@@ -31,4 +31,3 @@ export default function MiniBarChart({ data, color = "#2c7be5", height = 32 }: M
     </div>
   )
 }
-

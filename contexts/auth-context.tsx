@@ -78,4 +78,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 // Re-export the User type for convenience
 export type { User }
-

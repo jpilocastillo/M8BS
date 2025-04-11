@@ -20,11 +20,20 @@ export default function NewUser() {
     setLoading(true)
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Call the API to create a new user
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newUser),
+      })
 
-      // In a real app, this would create a user in Firebase Auth and add to Firestore
-      console.log("Creating new user:", newUser)
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to create user")
+      }
 
       // Show success message
       alert(`User ${newUser.name} created successfully!`)
@@ -33,7 +42,7 @@ export default function NewUser() {
       router.push("/admin/user")
     } catch (err) {
       console.error("Error adding user:", err)
-      setError("Failed to create user. Please try again.")
+      setError((err as Error).message || "Failed to create user. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -154,4 +163,3 @@ export default function NewUser() {
     </AdminLayout>
   )
 }
-

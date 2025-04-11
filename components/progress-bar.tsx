@@ -28,4 +28,3 @@ export default function ProgressBar({ value, color = "#2c7be5" }: ProgressBarPro
     </div>
   )
 }
-

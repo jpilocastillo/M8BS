@@ -21,4 +21,3 @@ export default function MetricCard({ title, value, chart, legend }: MetricCardPr
     </div>
   )
 }
-

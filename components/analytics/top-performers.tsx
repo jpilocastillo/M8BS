@@ -109,4 +109,3 @@ export default function TopPerformers({ events }: TopPerformersProps) {
     </div>
   )
 }
-

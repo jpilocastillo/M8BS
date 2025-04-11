@@ -2,10 +2,11 @@
 
 // Test user credentials
 export const TEST_USER = {
+  uid: "test-user-id",
   email: "test@example.com",
-  password: "password123",
   name: "Test User",
-  hasData: true,
+  role: "admin", // Set role to admin
+  customClaims: { admin: true }, // Add admin claim
 }
 
 // User interface
@@ -46,6 +47,7 @@ export async function loginUser(
 
       // Create user object
       const user: User = {
+        uid: TEST_USER.uid,
         email: TEST_USER.email,
         name: TEST_USER.name,
         isLoggedIn: true,
@@ -121,4 +123,3 @@ export async function signOutUser(): Promise<{ success: boolean; error?: any }> 
     return { success: false, error }
   }
 }
-

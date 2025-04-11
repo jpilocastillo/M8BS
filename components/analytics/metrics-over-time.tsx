@@ -104,4 +104,3 @@ export default function MetricsOverTime({ events }: MetricsOverTimeProps) {
     </div>
   )
 }
-

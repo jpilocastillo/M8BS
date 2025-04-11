@@ -32,4 +32,3 @@ export default function LineChart({ data, dataKey, color = "#2c7be5", height = 5
     </ResponsiveContainer>
   )
 }
-

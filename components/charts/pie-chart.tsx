@@ -106,4 +106,3 @@ export default function PieChart({
     </div>
   )
 }
-

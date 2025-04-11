@@ -139,6 +139,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Users className="h-5 w-5 mr-3" />
               <span>User Management</span>
             </Link>
+            <Link
+              href="/admin/roles"
+              className={`flex items-center px-4 py-3 rounded-md ${
+                pathname === "/admin/roles" || pathname.startsWith("/admin/roles/")
+                  ? "bg-gradient-to-r from-[#215cac]/20 to-[#2c7be5]/20 text-white"
+                  : "text-[#5e6e82] hover:text-white hover:bg-[#215cac]/10"
+              }`}
+            >
+              <Users className="h-5 w-5 mr-3" />
+              <span>User Roles</span>
+            </Link>
           </nav>
 
           {/* Admin info and logout */}
@@ -172,4 +183,3 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     </div>
   )
 }
-

@@ -29,4 +29,3 @@ export default function ProgressBar({ value, color = "#2c7be5", height = 8 }: Pr
     </div>
   )
 }
-

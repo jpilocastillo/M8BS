@@ -578,4 +578,3 @@ export const TEST_USER = {
   name: "Test User",
   hasData: true,
 }
-

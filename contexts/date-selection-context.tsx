@@ -24,4 +24,3 @@ export function useDateSelection() {
   }
   return context
 }
-

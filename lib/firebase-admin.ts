@@ -5,6 +5,42 @@ import { getIdToken } from "firebase/auth"
 // Add TEST_USER import at the top of the file
 import { TEST_USER } from "@/lib/auth"
 
+import { initializeApp, cert, getApps } from "firebase-admin/app"
+import { getFirestore } from "firebase-admin/firestore"
+import { getAuth } from "firebase-admin/auth"
+
+// Firebase Admin configuration
+const firebaseAdminConfig = {
+  projectId: "m8bsapp",
+  clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+  privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+}
+
+// Initialize Firebase Admin
+export function initializeFirebaseAdmin() {
+  if (!getApps().length) {
+    try {
+      const app = initializeApp({
+        credential: cert(firebaseAdminConfig),
+      })
+      console.log("Firebase Admin initialized successfully")
+      return { app }
+    } catch (error) {
+      console.error("Firebase Admin initialization error:", error)
+      return { app: null }
+    }
+  }
+  return { app: getApps()[0] }
+}
+
+// Initialize Firebase Admin on import
+const { app } = initializeFirebaseAdmin()
+
+// Export Firebase Admin services
+export const adminDb = getFirestore()
+export const adminAuth = getAuth()
+export default app
+
 // Update the checkIsAdmin function to handle test user
 export async function checkIsAdmin(email: string) {
   try {
@@ -44,39 +80,6 @@ export async function checkIsAdmin(email: string) {
 // Update the fetchUsers function to handle test user
 export async function fetchUsers() {
   try {
-    // If it's the test user, return mock data
-    if (isTestUser()) {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
-
-      return {
-        success: true,
-        users: [
-          {
-            uid: "test-admin-1",
-            email: "admin@example.com",
-            displayName: "Admin User",
-            role: "admin",
-            lastActive: new Date().toISOString(),
-          },
-          {
-            uid: "test-user-1",
-            email: "user1@example.com",
-            displayName: "Test User 1",
-            role: "user",
-            lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            uid: "test-user-2",
-            email: TEST_USER.email,
-            displayName: TEST_USER.name,
-            role: "user",
-            lastActive: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          },
-        ],
-      }
-    }
-
     const { auth } = await initializeFirebase()
     if (!auth || !auth.currentUser) {
       throw new Error("No authenticated user")
@@ -234,3 +237,88 @@ function isTestUser() {
   }
 }
 
+// Function to set admin claim for a user
+export async function setAdminClaim(uid: string, isAdmin = true) {
+  try {
+    const { auth } = await initializeFirebase()
+    if (!auth || !auth.currentUser) {
+      throw new Error("No authenticated user")
+    }
+
+    // Get the ID token for the current user
+    const token = await getIdToken(auth.currentUser, true)
+
+    // Call the API to set admin claim
+    const response = await fetch("/api/admin/set-admin-claim", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ uid, isAdmin }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Failed to set admin claim")
+    }
+
+    const data = await response.json()
+    return {
+      success: true,
+      message: data.message,
+      user: data.user,
+    }
+  } catch (error) {
+    console.error("Error setting admin claim:", error)
+    return {
+      success: false,
+      error,
+    }
+  }
+}
+
+// Add this function to your existing firebase-admin.ts file
+
+// Function to verify if the current user is an admin
+export async function verifyAdminStatus() {
+  try {
+    const { auth } = await initializeFirebase()
+    if (!auth || !auth.currentUser) {
+      return { success: false, isAdmin: false, error: "No authenticated user" }
+    }
+
+    // Get the ID token for the current user
+    const token = await getIdToken(auth.currentUser, true)
+
+    // Call the API to verify admin status
+    const response = await fetch("/api/admin/verify", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return {
+        success: false,
+        isAdmin: false,
+        error: errorData.error || "Failed to verify admin status",
+      }
+    }
+
+    const data = await response.json()
+    return {
+      success: true,
+      isAdmin: data.isAdmin,
+      user: data.user,
+    }
+  } catch (error) {
+    console.error("Error verifying admin status:", error)
+    return {
+      success: false,
+      isAdmin: false,
+      error,
+    }
+  }
+}

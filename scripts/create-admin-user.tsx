@@ -1,77 +1,50 @@
-// scripts/create-admin-user.tsx
+// This is a script you would run once to create your admin user
+// You would run this locally or in a secure environment
 
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, applicationDefault, cert } from 'firebase-admin/app';
-import readline from 'readline';
-import fs from 'fs';
-import path from 'path';
-import dotenv from 'dotenv';
+import { initializeApp } from "firebase/app"
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
+import { getFirestore, doc, setDoc } from "firebase/firestore"
 
-dotenv.config();
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-function ask(question: string): Promise<string> {
-  return new Promise((resolve) => {
-    rl.question(question, resolve);
-  });
+// Your Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB3dI7vF0QXf7nQqH2_vGylR5LuDwl8xZQ",
+  authDomain: "m8bs-c4f3d.firebaseapp.com",
+  projectId: "m8bs-c4f3d",
+  storageBucket: "m8bs-c4f3d.firebasestorage.app",
+  messagingSenderId: "976462758272",
+  appId: "1:976462758272:web:8801f8edb038a12e31c165",
 }
 
-function initializeFirebase() {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    const serviceAccountPath = path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT);
-    if (!fs.existsSync(serviceAccountPath)) {
-      console.error('Service account file not found at:', serviceAccountPath);
-      process.exit(1);
-    }
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    initializeApp({ credential: cert(serviceAccount) });
-    console.log('✅ Firebase initialized with service account');
-  } else {
-    initializeApp({ credential: applicationDefault() });
-    console.log('✅ Firebase initialized with application default credentials');
-  }
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const db = getFirestore(app)
 
-async function createUserWithRole() {
-  const email = await ask('Enter user email: ');
-  const password = await ask('Enter temporary password: ');
-  const role = await ask('Enter role (admin/user): ');
-  rl.close();
+// Admin user details - CHANGE THESE!
+const ADMIN_EMAIL = "admin@m8bs.com"
+const ADMIN_PASSWORD = "Admin@123456"
+const ADMIN_NAME = "System Administrator"
 
-  const auth = getAuth();
-
+async function createAdminUser() {
   try {
-    const user = await auth.getUserByEmail(email);
-    console.log(`User already exists: ${user.uid}`);
-  } catch (err: any) {
-    if (err.code === 'auth/user-not-found') {
-      const newUser = await auth.createUser({
-        email,
-        emailVerified: true,
-        password,
-        displayName: role === 'admin' ? 'Real Admin' : 'User',
-      });
-      console.log(`Created new user: ${newUser.uid}`);
-    } else {
-      throw err;
-    }
-  }
+    // Create the user
+    const userCredential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD)
 
-  const userRecord = await auth.getUserByEmail(email);
-  const claims = role === 'admin' ? { admin: true } : { user: true };
-  await auth.setCustomUserClaims(userRecord.uid, claims);
-  console.log(`User ${email} is now assigned role: ${role}`);
+    const user = userCredential.user
+
+    // Add admin role to user in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      email: ADMIN_EMAIL,
+      displayName: ADMIN_NAME,
+      role: "admin",
+      createdAt: new Date(),
+    })
+
+    console.log("Admin user created successfully:", user.uid)
+  } catch (error) {
+    console.error("Error creating admin user:", error)
+  }
 }
 
-initializeFirebase();
-
-createUserWithRole().catch((e) => {
-  console.error('Error creating user:', e);
-  process.exit(1);
-});
-
-
+// Run the function
+createAdminUser()

@@ -30,23 +30,6 @@ export default function NewUserPage() {
     setError(null)
 
     try {
-      // In preview mode, simulate success with mock data
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      setSuccess({
-        user: {
-          uid: `mock-${Date.now()}`,
-          email: formData.email,
-          displayName: formData.name,
-          role: formData.role,
-        },
-        tempPassword: "TempPass123!",
-      })
-
-      setLoading(false)
-      return
-
-      // The code below is kept but not executed in preview mode
       const result = await createUserViaApi(formData)
 
       if (result.success && result.user) {
@@ -190,4 +173,3 @@ export default function NewUserPage() {
     </AdminLayout>
   )
 }
-

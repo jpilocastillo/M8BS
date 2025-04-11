@@ -318,4 +318,3 @@ export default function WelcomeScreen({ onComplete, onSkip }: WelcomeScreenProps
     </div>
   )
 }
-

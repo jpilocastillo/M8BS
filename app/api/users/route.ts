@@ -1,37 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { initializeFirebaseAdmin } from "@/lib/firebase-admin-server"
-
-// Helper function to verify admin status
-async function verifyIsAdmin(authHeader: string | null) {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new Error("Unauthorized: Missing or invalid authorization header")
-  }
-
-  const token = authHeader.split("Bearer ")[1]
-
-  try {
-    const { auth } = initializeFirebaseAdmin()
-    const decodedToken = await auth.verifyIdToken(token)
-
-    // Check if user is admin (you can customize this logic)
-    const email = decodedToken.email
-    if (!email || !email.includes("admin")) {
-      throw new Error("Forbidden: User is not an admin")
-    }
-
-    return decodedToken
-  } catch (error) {
-    console.error("Error verifying admin status:", error)
-    throw new Error("Unauthorized: Invalid token")
-  }
-}
+import { verifyAuth, createErrorResponse } from "@/lib/api-auth"
 
 // GET handler to list users
 export async function GET(request: NextRequest) {
-  try {
-    // Verify admin status
-    await verifyIsAdmin(request.headers.get("authorization"))
+  // Verify admin status
+  const authResult = await verifyAuth(request, true) // true = require admin
 
+  if (!authResult.success) {
+    return createErrorResponse(authResult.error, authResult.status)
+  }
+
+  try {
     const { auth, db } = initializeFirebaseAdmin()
 
     // Get users from Firebase Auth (limited to 1000 users)
@@ -69,18 +49,25 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error in GET /api/users:", error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: error instanceof Error && error.message.includes("Unauthorized") ? 401 : 500 },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }
 
 // POST handler to create a new user
 export async function POST(request: NextRequest) {
-  try {
-    // Verify admin status
-    await verifyIsAdmin(request.headers.get("authorization"))
+  // Verify admin status
+  const authResult = await verifyAuth(request, true) // true = require admin
 
+  if (!authResult.success) {
+    return createErrorResponse(authResult.error, authResult.status)
+  }
+
+  try {
     const { auth, db } = initializeFirebaseAdmin()
     const body = await request.json()
 
@@ -136,9 +123,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error in POST /api/users:", error)
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-      { status: error instanceof Error && error.message.includes("Unauthorized") ? 401 : 500 },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     )
   }
 }
-

@@ -238,4 +238,3 @@ export default function EventComparisonChart({ events }: EventComparisonChartPro
     </div>
   )
 }
-

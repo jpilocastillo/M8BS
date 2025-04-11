@@ -328,4 +328,3 @@ export async function deleteMarketingEvent(id: string): Promise<{ success: boole
     throw error
   }
 }
-

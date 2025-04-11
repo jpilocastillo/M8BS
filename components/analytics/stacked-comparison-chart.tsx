@@ -217,4 +217,3 @@ export default function StackedComparisonChart({ events }: StackedComparisonChar
     </div>
   )
 }
-

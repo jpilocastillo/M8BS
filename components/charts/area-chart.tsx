@@ -83,4 +83,3 @@ export default function AreaChart({ data, series, height = 300, yAxisPrefix = ""
     </ResponsiveContainer>
   )
 }
-
